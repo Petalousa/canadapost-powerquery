@@ -1,0 +1,14 @@
+/*
+
+*/
+
+let
+    Source = Excel.CurrentWorkbook(){[Name="Table6"]}[Content],
+    #"Removed Other Columns" = Table.SelectColumns(Source,{"ID", "TRACKING NUMBER", "STATUS", "DATE DELIVERED"}),
+    #"Replace Errors" = Table.ReplaceErrorValues(#"Removed Other Columns", {{"STATUS", ""}, {"DATE DELIVERED", ""}}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Replace Errors", {{"ID", type text}}),
+    #"Query API" = Table.AddColumn(#"Changed Type", "StatusList", each getStatusFromTnum([#"TRACKING NUMBER"], [#"STATUS"], [#"DATE DELIVERED"])),
+    #"Add Status" = Table.AddColumn(#"Query API", "NEW STATUS", each [#"StatusList"]{0}),
+    #"Add Date" = Table.AddColumn(#"Add Status", "NEW DATE", each [#"StatusList"]{1})
+in
+    #"Add Date"
