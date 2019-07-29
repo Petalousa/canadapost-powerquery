@@ -1,0 +1,37 @@
+/*
+queryAPI()
+
+@author Elijah MacDonald
+@date 2019-07-25
+
+input: url
+
+about:
+    queries an api, via inputted url.
+    headers are hardcoded for xml
+    returns response. if error, returns error message
+
+    use Value.Is([], type text) to check if an error message has been returned
+
+output:
+    api data from url or
+    error message
+
+*/
+
+
+let Source = (url) =>
+    let response =
+        Web.Contents(
+            url, [Headers=[Accept="application/vnd.cpc.track+xml", #"Accept-language"="ec-CA"]]
+        ),
+        GetMetadata = Value.Metadata(response),
+        ResponseStatus = try GetMetadata[Response.Status],    //try getting the status
+        result = 
+        if ResponseStatus[HasError] then
+            ResponseStatus[Error]
+            //return error if the request fails
+        else
+            response                            //otherwise return value
+    in result
+in Source
