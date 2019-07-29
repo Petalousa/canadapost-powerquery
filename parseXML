@@ -1,0 +1,50 @@
+/*
+parseXML()
+
+@author Elijah MacDonald
+@date 2019-07-25
+
+input: an xml response from canada post.
+	can be either a tracking summary or an error message.
+	see https://www.canadapost.ca/cpo/mc/business/productsservices/developers/services/tracking/default.jsf
+
+about:
+	takes xml, converts to table, and finds the "event-description" tag, returning the latest status
+        if the item is delivered, also gives date of delivery
+	if the xml is an error xml, it will return the error message
+	
+output: 
+	info in "event-description" tag of tracking xml or
+        if "delivered", list containing delivery status and date of delivery.
+
+	if error: info in "description" tag of error message
+
+*/
+
+let Source = (xml) => 
+    let isXML = if Value.Is(xml, type binary) then     
+        let xmlAsTable = Table.First(Xml.Tables(xml,null,1252))[Table],
+        errorDescription = try xmlAsTable[description],
+        resultText = if errorDescription[HasError] then    //returns actual value
+            let status = xmlAsTable[#"event-description"]{0},
+            statusList = if Text.Contains(status, "Delivered") then     //check if item is delivered
+                {status, xmlAsTable[#"actual-delivery-date"]{0}}        //return pair of ("delivered", date)
+            else
+                {status, ""}    //if item isn't delivered, return status
+            in 
+                statusList
+        else
+            {errorDescription[Value]{0}, ""}    //returns error
+        in
+            resultText
+    else
+        let errorMessage = xml[Message],
+        errorClean = if Text.Contains(errorMessage, "400") then
+            {"Missing or Malformed tracking number", ""}
+        else
+            {xml[Message], ""}
+        in errorClean
+    in
+        isXML
+in
+    Source
