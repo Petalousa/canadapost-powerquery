@@ -1,0 +1,47 @@
+/*
+getStatusFromTnum()
+@author Elijah MacDonald
+@date 2019-07-25
+
+input: a tracking number
+
+about:
+	takes a tracking number, cleans it, and gets the resulting tracking status, and date delivered, if available.
+        	
+output: 
+	//TODO
+
+*/
+
+let Source = (trackingNumInput as any, oldStatusIn, oldDate) => 
+    let trackingNum = Text.From(trackingNumInput),
+    oldStatus = Text.From(oldStatusIn),
+    isDelivered = if oldStatus <> null and Text.Contains(Text.Lower(Text.From(oldStatus)), "delivered") then
+        {oldStatus, oldDate}
+        //if delivered, return old data
+    else
+        let isNull = if trackingNum = null then
+            {Text.From(oldStatus), oldDate}
+        else 
+            let tnumClean = Text.Remove(trackingNum, {" ", "'", "`", "-"}),
+            validTnum = if Text.Length(tnumClean) >= 13 then
+                let urlPart1 = "https://soa-gw.canadapost.ca/vis/track/pin/",
+                urlPart3 = "/summary",
+                url = Text.Combine({urlPart1, tnumClean, urlPart3}, ""),
+                xmlParsed = parseXML(queryAPI(url))                        //API QUERIED
+                in
+                    xmlParsed
+            else if Text.Length(tnumClean) > 1 then
+                {"Invalid tracking number", oldDate}
+                //if tnum is between 2 and 12 chars
+            else
+                {Text.From(oldStatus), oldDate}
+                //if tnum is 0 or 1 chars
+            in 
+                validTnum 
+        in
+            isNull
+    in
+        isDelivered
+in 
+    Source
